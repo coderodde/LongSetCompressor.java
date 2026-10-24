@@ -83,6 +83,13 @@ public class LongSetCompressor {
         return array;
     }
     
+    /**
+     * Prepends up to 64 bits from {@code gap}.
+     * 
+     * @param bits    the bit string builder.
+     * @param gap     the integer containing the bits to prepend.
+     * @param gapBits the number of bits to prepend.
+     */
     private static void prependCode(BitStringBuilder bits, 
                                     long gap,
                                     int gapBits) {
@@ -93,6 +100,12 @@ public class LongSetCompressor {
         }
     }
     
+    /**
+     * Prepends a 32-bit integer completely.
+     * 
+     * @param bits  the bit string builder.
+     * @param value the integer to prepend.
+     */
     private static void prependInt(BitStringBuilder bits, int value) {
         for (int i = 0; i < Integer.SIZE; ++i) {
             boolean bit = (value & (1 << i)) != 0;
@@ -100,6 +113,12 @@ public class LongSetCompressor {
         }
     }
     
+    /**
+     * Prepends a 64-bit integer completely.
+     * 
+     * @param bits  the bit string builder.
+     * @param value the integer to prepend.
+     */
     private static void prependLong(BitStringBuilder bits, long value) {
         for (int i = 0; i < Long.SIZE; ++i) {
             boolean bit = (value & (1L << i)) != 0;
@@ -107,6 +126,12 @@ public class LongSetCompressor {
         }
     }
     
+    /**
+     * Prepends a 8-bit integer completely.
+     * 
+     * @param bits  the bit string builder.
+     * @param value the integer to prepend.
+     */
     private static void prependByte(BitStringBuilder bits, byte value) {
         for (int i = 0; i < Byte.SIZE; ++i) {
             boolean bit = (value & (1 << i)) != 0;

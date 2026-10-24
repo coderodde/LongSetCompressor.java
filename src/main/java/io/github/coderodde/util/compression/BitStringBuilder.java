@@ -15,69 +15,6 @@ public class BitStringBuilder {
         bits = new long[1];
     }
     
-    public BitStringBuilder(final int length) {
-        checkLength(length);
-        this.length = length;
-    }
-    
-    public BitStringBuilder(final long[] bits, final int length) {
-        checkLength(length);
-        
-        this.length   = length;
-        int longIndex = 0;
-        
-        final int longs =  length / Long.SIZE 
-                        + (length % Long.SIZE != 0 ? 1 : 0);
-        
-        this.bits = Arrays.copyOf(bits, longs);
-        
-        for (int i = 0; i < length;) {
-            final boolean bit = readBit(this.bits[longIndex], i % Long.SIZE);
-            
-            prependBit(bit);
-            
-            ++i;
-            
-            if (i % Long.SIZE == 0) {
-                ++longIndex;
-            }
-        }
-        
-        reverse();
-    }
-    
-    private static boolean readBit(final long bits, final int bitIndex) {
-        return ((bits >>> bitIndex) & 1) != 0;
-    }
-    
-    public BitStringBuilder reverse() {
-        final BitStringBuilder reversed = new BitStringBuilder(bits, length);
-        
-        for (int i = length - 1, j = 0; i >= 0; --i, ++j) {
-            if (get(i)) {
-                reversed.set(j);
-            }
-        }
-        
-        return reversed;
-    }
-    
-    public byte[] toByteArray() {
-        final int byteArrayLength = 
-                length / Byte.SIZE + (length % Byte.SIZE != 0 ? 1 : 0);
-        
-        final byte[] byteArray = new byte[byteArrayLength];
-        
-        for (int byteArrayIndex = 0;
-                 byteArrayIndex < byteArrayLength;
-                 byteArrayIndex++) {
-            
-            byteArray[byteArrayIndex] = extractByte(byteArrayIndex);
-        }
-        
-        return byteArray;
-    }
-    
     public void prependBit(final boolean bit) {
         ++length;
         
@@ -167,35 +104,6 @@ public class BitStringBuilder {
     }
     
     @Override
-    public boolean equals(final Object object) {
-        if (object == this) {
-            return true;
-        }
-        
-        if (object == null) {
-            return false;
-        }
-    
-        if (!getClass().equals(object.getClass())) {
-            return false;
-        }
-        
-        final BitStringBuilder other = (BitStringBuilder) object;
-        
-        if (length() != other.length()) {
-            return false;
-        }
-        
-        for (int i = 0; i < length(); ++i) {
-            if (get(i) != other.get(i)) {
-                return false;
-            }
-        }
-        
-        return true;
-    }
-    
-    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder(length);
         
@@ -204,12 +112,6 @@ public class BitStringBuilder {
         }
         
         return sb.toString();
-    }
-    
-    private byte extractByte(final int byteArrayIndex) {
-        final int bitsLongIndex = byteArrayIndex / Long.BYTES;
-        final long tmp = bits[bitsLongIndex] >>> (byteArrayIndex * Byte.SIZE);
-        return (byte) (tmp & 0xff);
     }
     
     private void checkIndex(final int index) {
@@ -223,13 +125,6 @@ public class BitStringBuilder {
                     String.format("index(%d) >= length(%d)", 
                                   index, 
                                   length));
-        }
-    }
-    
-    private static void checkLength(final int length) {
-        if (length < 0) {
-            throw new IllegalArgumentException(
-                    String.format("length(%d) < 1", length));
         }
     }
 }
