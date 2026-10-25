@@ -2,6 +2,8 @@ package io.github.coderodde.util.compression.benchmark;
 
 import io.github.coderodde.util.compression.BitStringBuilder;
 import io.github.coderodde.util.compression.LongSetCompressor;
+import io.github.coderodde.util.compression.LongSetCompressor.CompressionResult;
+import io.github.coderodde.util.compression.LongSetCompressor.DecompressionResult;
 import io.github.coderodde.util.compression.Misc;
 import java.util.Arrays;
 import java.util.Random;
@@ -11,37 +13,42 @@ import java.util.Random;
  */
 public final class Benchmark {
     
-    private static final int LENGTH    = 1_000_000; 
-    private static final Random RANDOM = new Random(123L);
+    private static final int LENGTH       = 1_000_000; 
+    private static final long UPPER_BOUND = 50_000_000L;
+    private static final Random RANDOM    = new Random(123L);
     
     private Benchmark() {}
     
     public static void main(String[] args) {
-        long[] array = Misc.longSet(LENGTH, RANDOM);
+        long[] array = Misc.longSet(LENGTH, UPPER_BOUND, RANDOM);
         
         long ta = System.currentTimeMillis();
-        
-        BitStringBuilder bits = LongSetCompressor.compressLongArray(array);
-        
+        // Don't quite need that as the compressor also sorts, but may speed
+        // up sorting in the compressor:
+        Arrays.sort(array);
         long tb = System.currentTimeMillis();
-        long compressionDuration = tb - ta;
         
-        ta = System.currentTimeMillis();
-        long[] result = LongSetCompressor.decompressLongSet(bits);
-        tb = System.currentTimeMillis();
-        long decompressionDuration = tb - ta;
+        System.out.printf("Presorting done in %d milliseconds.%n", tb - ta);
+        
+        CompressionResult cr   = LongSetCompressor.compressLongArray(array);
+        DecompressionResult dr = LongSetCompressor.decompressLongSet(
+                                                            cr.bitString());
         
         System.out.printf("""
-                          Uncomressed array takes %9d bits.
-                          Compressed data takes   %9d bits.
-                          Compressed in:   %d milliseconds.
-                          Decompressed in: %d milliseconds.
-                          Compression/decompression agrees: %b.
+                          Sorting duration: %d milliseconds.
+                          Compression duration: %d milliseconds.
+                          Compaction duration: %d milliseconds.
+                          Raw capacity: %d bits.
+                          Compacted capacity: %d bits.
+                          Decompression duration: %d milliseconds.
+                          Arrays equal: %b.
                           """,
-                          LongSetCompressor.getBitCount(array),
-                          bits.length(),
-                          compressionDuration,
-                          decompressionDuration,
-                          Arrays.equals(array, result));
+                          cr.sortingDuration(),
+                          cr.compressionDuration(),
+                          cr.compactionDuration(),
+                          cr.rawCapacity(),
+                          cr.compactedCapacity(),
+                          dr.decompressionDuration(),
+                          Arrays.equals(array, dr.intSet()));
     }
 }

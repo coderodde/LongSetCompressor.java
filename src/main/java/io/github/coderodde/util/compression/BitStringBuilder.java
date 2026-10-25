@@ -8,13 +8,15 @@ import java.util.Arrays;
  */
 public class BitStringBuilder {
 
-    private int length;
-    private long[] bits;
+    private int length  = 0;
+    private long[] bits = new long[3];
     
-    public BitStringBuilder() {
-        bits = new long[1];
-    }
-    
+    /**
+     * Prepends the input bit to this bit string builder. The input bit becomes
+     * the most significant bit in the string.
+     * 
+     * @param bit the bit to prepend.
+     */
     public void prependBit(final boolean bit) {
         ++length;
         
@@ -27,10 +29,77 @@ public class BitStringBuilder {
         }
     }
     
+    /**
+     * Prepends up to 64 bits from {@code gap}.
+     * 
+     * @param gap     the integer containing the bits to prepend.
+     * @param gapBits the number of bits to prepend.
+     */
+    public void prependCode(long gap, int gapBits) {
+        gapBits = Math.min(gapBits, Long.SIZE);
+        
+        for (int i = 0; i < gapBits; ++i) {
+            boolean bit = (gap & (1L << i)) != 0;
+            prependBit(bit);
+        }
+    }
+    
+    /**
+     * Prepends a 32-bit integer completely.
+     * 
+     * @param value the integer to prepend.
+     */
+    public void prependInt(int value) {
+        for (int i = 0; i < Integer.SIZE; ++i) {
+            boolean bit = (value & (1 << i)) != 0;
+            prependBit(bit);
+        }
+    }
+    
+    /**
+     * Prepends a 64-bit integer completely.
+     * 
+     * @param value the integer to prepend.
+     */
+    public void prependLong(long value) {
+        for (int i = 0; i < Long.SIZE; ++i) {
+            boolean bit = (value & (1L << i)) != 0;
+            prependBit(bit);
+        }
+    }
+    
+    /**
+     * Prepends a 8-bit integer completely.
+     * 
+     * @param value the integer to prepend.
+     */
+    public void prependByte(byte value) {
+        for (int i = 0; i < Byte.SIZE; ++i) {
+            boolean bit = (value & (1 << i)) != 0;
+            prependBit(bit);
+        }
+    }
+    
     public int length() {
         return length;
     }
     
+    public int capacity() {
+        return Long.SIZE * bits.length;
+    }
+    
+    public void compact() {
+        int capacity = length / Long.SIZE + (length % Long.SIZE != 0 ? 1 : 0);
+        bits         = Arrays.copyOf(bits, capacity);
+    }
+    
+    /**
+     * Reads the {@code index}th least significant bit.
+     * 
+     * @param index the bit index.
+     * 
+     * @return the target bit.
+     */
     public boolean get(final int index) {
         checkIndex(index);
         
@@ -39,6 +108,11 @@ public class BitStringBuilder {
         return ((bits & mask) != 0);
     }
     
+    /**
+     * Sets the {@code index}th least significant bit.
+     * 
+     * @param index the bit index.
+     */
     public void set(final int index) {
         checkIndex(index);
         
@@ -47,6 +121,13 @@ public class BitStringBuilder {
         this.bits[bitsLongIndex] |= mask;
     }
     
+    /**
+     * Reads an integer starting from the {@code bitIndex}th bit.
+     * 
+     * @param bitIndex the starting bit index.
+     * 
+     * @return the target 32-bit integer.
+     */
     public int readInt(final int bitIndex) {
         int data = 0;
         
@@ -61,6 +142,13 @@ public class BitStringBuilder {
         return data;
     }
     
+    /**
+     * Reads an integer starting from the {@code bitIndex}th bit.
+     * 
+     * @param bitIndex the starting bit index.
+     * 
+     * @return the target 64-bit integer.
+     */
     public long readLong(final int bitIndex) {
         long data = 0;
         
@@ -75,6 +163,13 @@ public class BitStringBuilder {
         return data;
     }
     
+    /**
+     * Reads an integer starting from the {@code bitIndex}th bit.
+     * 
+     * @param bitIndex the starting bit index.
+     * 
+     * @return the target 8-bit integer.
+     */
     public byte readByte(final int bitIndex) {
         byte data = 0;
         
@@ -89,8 +184,17 @@ public class BitStringBuilder {
         return data;
     }
     
-    public long readBits(final int bitIndex, final int bitCount) {
+    /**
+     * Reads raw bits starting from the {@code bitIndex}th bit.
+     * 
+     * @param bitIndex the starting bit index.
+     * @param bitCount
+     * 
+     * @return the target {@code bitCount}-bit integer.
+     */
+    public long readBits(final int bitIndex, int bitCount) {
         long data = 0;
+        bitCount  = Math.min(bitCount, Long.SIZE);
         
         for (int i = 0; i < bitCount; ++i) {
             boolean bit = get(bitIndex + i);

@@ -8,6 +8,20 @@ import java.util.Arrays;
  */
 public class LongSetCompressor {
     
+    public static final record CompressionResult(BitStringBuilder bitString,
+                                                 long sortingDuration,
+                                                 long compressionDuration,
+                                                 long compactionDuration,
+                                                 int rawCapacity,
+                                                 int compactedCapacity) {
+        
+    }
+    
+    public static final record DecompressionResult(long[] intSet,
+                                                   long decompressionDuration) {
+        
+    }
+    
     private LongSetCompressor() {}
 
     /**
@@ -22,9 +36,13 @@ public class LongSetCompressor {
      * 
      * @return the bit string builder containing the compressed binary data. 
      */
-    public static BitStringBuilder compressLongArray(long[] array) {
+    public static CompressionResult compressLongArray(long[] array) {
+        long ta = System.currentTimeMillis();
         Arrays.sort(array);
+        long tb = System.currentTimeMillis();
+        long sortingDuration = tb - ta;
         
+        ta = System.currentTimeMillis();
         long maximumGap = 0L;
         
         for (int i = 1; i < array.length; ++i) {
@@ -44,17 +62,32 @@ public class LongSetCompressor {
         
         BitStringBuilder bits = new BitStringBuilder();
         
-        prependInt (bits, array.length);
-        prependLong(bits, array[0]);
-        prependByte(bits, (byte) gapBits);
+        bits.prependInt(array.length);
+        bits.prependLong(array[0]);
+        bits.prependByte((byte) gapBits);
         
         for (int i = 1; i < array.length; ++i) {
             long gap = array[i] - array[i - 1];
             
-            prependCode(bits, gap, gapBits);
+            bits.prependCode(gap, gapBits);
         }
         
-        return bits;
+        tb = System.currentTimeMillis();
+        long compressionDuration = tb - ta;
+        int rawCapacity = bits.capacity();
+        
+        ta = System.currentTimeMillis();
+        bits.compact();
+        tb = System.currentTimeMillis();
+        long compactionDuration = tb - ta;
+        int compactedCapacity = bits.capacity();
+        
+        return new CompressionResult(bits,
+                                     sortingDuration,
+                                     compressionDuration,
+                                     compactionDuration,
+                                     rawCapacity,
+                                     compactedCapacity);
     }
     
     /**
@@ -65,7 +98,8 @@ public class LongSetCompressor {
      * 
      * @return the sorted array of compressed values. 
      */
-    public static long[] decompressLongSet(BitStringBuilder bits) {
+    public static DecompressionResult decompressLongSet(BitStringBuilder bits) {
+        long ta      = System.currentTimeMillis();
         int  length  = bits.readInt(0);
         long minimum = bits.readLong(Integer.SIZE);
         byte gapBits = bits.readByte(Integer.SIZE + Long.SIZE);
@@ -80,63 +114,8 @@ public class LongSetCompressor {
             bitIndex += gapBits;
         }
         
-        return array;
-    }
-    
-    /**
-     * Prepends up to 64 bits from {@code gap}.
-     * 
-     * @param bits    the bit string builder.
-     * @param gap     the integer containing the bits to prepend.
-     * @param gapBits the number of bits to prepend.
-     */
-    private static void prependCode(BitStringBuilder bits, 
-                                    long gap,
-                                    int gapBits) {
-        
-        for (int i = 0; i < gapBits; ++i) {
-            boolean bit = (gap & (1L << i)) != 0;
-            bits.prependBit(bit);
-        }
-    }
-    
-    /**
-     * Prepends a 32-bit integer completely.
-     * 
-     * @param bits  the bit string builder.
-     * @param value the integer to prepend.
-     */
-    private static void prependInt(BitStringBuilder bits, int value) {
-        for (int i = 0; i < Integer.SIZE; ++i) {
-            boolean bit = (value & (1 << i)) != 0;
-            bits.prependBit(bit);
-        }
-    }
-    
-    /**
-     * Prepends a 64-bit integer completely.
-     * 
-     * @param bits  the bit string builder.
-     * @param value the integer to prepend.
-     */
-    private static void prependLong(BitStringBuilder bits, long value) {
-        for (int i = 0; i < Long.SIZE; ++i) {
-            boolean bit = (value & (1L << i)) != 0;
-            bits.prependBit(bit);
-        }
-    }
-    
-    /**
-     * Prepends a 8-bit integer completely.
-     * 
-     * @param bits  the bit string builder.
-     * @param value the integer to prepend.
-     */
-    private static void prependByte(BitStringBuilder bits, byte value) {
-        for (int i = 0; i < Byte.SIZE; ++i) {
-            boolean bit = (value & (1 << i)) != 0;
-            bits.prependBit(bit);
-        }
+        long decompressionDuration = System.currentTimeMillis() - ta;
+        return new DecompressionResult(array, decompressionDuration);
     }
     
     public static int getBitCount(long[] data) {
