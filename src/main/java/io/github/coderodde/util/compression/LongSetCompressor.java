@@ -12,6 +12,7 @@ public class LongSetCompressor {
                                                  long sortingDuration,
                                                  long compressionDuration,
                                                  long compactionDuration,
+                                                 long totalDuration,
                                                  int rawCapacity,
                                                  int compactedCapacity) {
         
@@ -86,6 +87,9 @@ public class LongSetCompressor {
                                      sortingDuration,
                                      compressionDuration,
                                      compactionDuration,
+                                     sortingDuration 
+                                             + compressionDuration 
+                                             + compactionDuration,
                                      rawCapacity,
                                      compactedCapacity);
     }

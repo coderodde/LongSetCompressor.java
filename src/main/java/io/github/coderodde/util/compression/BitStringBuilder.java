@@ -9,7 +9,7 @@ import java.util.Arrays;
 public class BitStringBuilder {
 
     private int length  = 0;
-    private long[] bits = new long[3];
+    private long[] bits = new long[1];
     
     /**
      * Prepends the input bit to this bit string builder. The input bit becomes
@@ -21,11 +21,11 @@ public class BitStringBuilder {
         ++length;
         
         if (length == bits.length * Long.SIZE) {
-            this.bits = Arrays.copyOf(this.bits, length * 2);
+            this.bits = Arrays.copyOf(this.bits, this.bits.length * 2);
         }
         
         if (bit) {
-            set(length - 1);
+            setImpl(length - 1);
         }
     }
     
@@ -94,34 +94,6 @@ public class BitStringBuilder {
     }
     
     /**
-     * Reads the {@code index}th least significant bit.
-     * 
-     * @param index the bit index.
-     * 
-     * @return the target bit.
-     */
-    public boolean get(final int index) {
-        checkIndex(index);
-        
-        final long bits = this.bits[index / Long.SIZE];
-        final long mask = 1L << index;
-        return ((bits & mask) != 0);
-    }
-    
-    /**
-     * Sets the {@code index}th least significant bit.
-     * 
-     * @param index the bit index.
-     */
-    public void set(final int index) {
-        checkIndex(index);
-        
-        final int bitsLongIndex   = index / Long.SIZE;
-        final long mask           = 1L << index;
-        this.bits[bitsLongIndex] |= mask;
-    }
-    
-    /**
      * Reads an integer starting from the {@code bitIndex}th bit.
      * 
      * @param bitIndex the starting bit index.
@@ -132,7 +104,7 @@ public class BitStringBuilder {
         int data = 0;
         
         for (int i = 0; i < Integer.SIZE; ++i) {
-            boolean bit = get(bitIndex + i);
+            boolean bit = getImpl(bitIndex + i);
             
             if (bit) {
                 data |= (1 << i);
@@ -153,7 +125,7 @@ public class BitStringBuilder {
         long data = 0;
         
         for (int i = 0; i < Long.SIZE; ++i) {
-            boolean bit = get(bitIndex + i);
+            boolean bit = getImpl(bitIndex + i);
             
             if (bit) {
                 data |= (1L << i);
@@ -174,7 +146,7 @@ public class BitStringBuilder {
         byte data = 0;
         
         for (int i = 0; i < Byte.SIZE; ++i) {
-            boolean bit = get(bitIndex + i);
+            boolean bit = getImpl(bitIndex + i);
             
             if (bit) {
                 data |= ((byte)(1) << i);
@@ -197,7 +169,7 @@ public class BitStringBuilder {
         bitCount  = Math.min(bitCount, Long.SIZE);
         
         for (int i = 0; i < bitCount; ++i) {
-            boolean bit = get(bitIndex + i);
+            boolean bit = getImpl(bitIndex + i);
             
             if (bit) {
                 data |= (1L << i);
@@ -212,23 +184,23 @@ public class BitStringBuilder {
         final StringBuilder sb = new StringBuilder(length);
         
         for (int i = length - 1; i >= 0; --i) {
-            sb.append(get(i) ? "1" : "0");
+            sb.append(getImpl(i) ? "1" : "0");
         }
         
         return sb.toString();
     }
     
-    private void checkIndex(final int index) {
-        if (index < 0) {
-            throw new IndexOutOfBoundsException(
-                    String.format("index(%d) < 0", index));
-        }
-        
-        if (index >= this.length) {
-            throw new IndexOutOfBoundsException(
-                    String.format("index(%d) >= length(%d)", 
-                                  index, 
-                                  length));
-        }
+    private boolean getImpl(final int index) {
+        final int bitsLongIndex = index / Long.SIZE;
+        final int bitIndex      = index % Long.SIZE;
+        final long mask         = 1L << bitIndex;
+        return (bits[bitsLongIndex] & mask) != 0;
+    }
+    
+    private void setImpl(final int index) {
+        final int bitsLongIndex = index / Long.SIZE;
+        final int bitIndex      = index % Long.SIZE;
+        final long mask         = 1L << bitIndex;
+        bits[bitsLongIndex]    |= mask;
     }
 }

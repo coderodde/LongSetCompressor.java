@@ -1,6 +1,5 @@
 package io.github.coderodde.util.compression.benchmark;
 
-import io.github.coderodde.util.compression.BitStringBuilder;
 import io.github.coderodde.util.compression.LongSetCompressor;
 import io.github.coderodde.util.compression.LongSetCompressor.CompressionResult;
 import io.github.coderodde.util.compression.LongSetCompressor.DecompressionResult;
@@ -35,19 +34,23 @@ public final class Benchmark {
                                                             cr.bitString());
         
         System.out.printf("""
-                          Sorting duration: %d milliseconds.
-                          Compression duration: %d milliseconds.
-                          Compaction duration: %d milliseconds.
-                          Raw capacity: %d bits.
-                          Compacted capacity: %d bits.
+                          Sorting duration:           %5d milliseconds.
+                          Compression duration:       %5d milliseconds.
+                          Compaction duration:        %5d milliseconds.
+                          Total compression duration: %5d milliseconds.
+                          Raw capacity:          %d bits.
+                          Compacted capacity:    %d bits.
+                          Uncompressed capacity: %d bits.
                           Decompression duration: %d milliseconds.
                           Arrays equal: %b.
                           """,
                           cr.sortingDuration(),
                           cr.compressionDuration(),
                           cr.compactionDuration(),
+                          cr.totalDuration(),
                           cr.rawCapacity(),
                           cr.compactedCapacity(),
+                          LongSetCompressor.getBitCount(array),
                           dr.decompressionDuration(),
                           Arrays.equals(array, dr.intSet()));
     }
